@@ -65,9 +65,9 @@ public class HateoasIntegrationTest {
         InputStream customersResponse = expect().
                 body("rows.size()", is(2)).
                 body("rows[0].name", equalTo("Mattias")).
-                body("rows[0].links.size()", is(1)).
+                body("rows[0].links.size()", is(3)).
                 body("rows[1].name", equalTo("Kalle")).
-                body("rows[1].links.size()", is(1)).
+                body("rows[1].links.size()", is(3)).
                 statusCode(200).
                 when().get(customersHref).asInputStream();
 

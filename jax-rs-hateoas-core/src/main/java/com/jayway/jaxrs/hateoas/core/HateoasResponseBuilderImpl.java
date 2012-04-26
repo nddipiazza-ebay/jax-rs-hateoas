@@ -20,7 +20,6 @@ import com.jayway.jaxrs.hateoas.support.AtomRels;
 import com.jayway.jaxrs.hateoas.support.FieldPath;
 import com.jayway.jaxrs.hateoas.support.ReflectionUtils;
 import com.jayway.jaxrs.hateoas.web.RequestContext;
-import com.sun.jersey.api.view.Viewable;
 import com.sun.jersey.core.header.OutBoundHeaders;
 import com.sun.jersey.core.spi.factory.ResponseImpl;
 
@@ -53,13 +52,19 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
         return links(HateoasResponseBuilder.makeLink(id, rel, params));
     }
 
+    @Override
     public HateoasResponseBuilder link(FieldPath fieldPath, String id, String rel, String... entityFields) {
         return link(fieldPath, new ReflectionBasedLinkProducer(id, rel, entityFields));
     }
 
     @Override
+    public HateoasResponseBuilder selfLink(FieldPath fieldPath, String id, String... entityFields) {
+        return link(fieldPath, id, AtomRels.SELF, entityFields);
+    }
+
+    @Override
     public HateoasResponseBuilder link(FieldPath fieldPath, LinkProducer<?> linkProducer) {
-        if(!linkMappings.containsKey(fieldPath)) {
+        if (!linkMappings.containsKey(fieldPath)) {
             linkMappings.put(fieldPath, new ChainedLinkProducer());
         }
 
@@ -74,10 +79,6 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
         return link(id, AtomRels.SELF, params);
     }
 
-    @Override
-    public HateoasResponse.HateoasResponseBuilder links(HateoasLink... links) {
-        return link(FieldPath.EMPTY_PATH, new FixedLinkProducer(Arrays.asList(links)));
-    }
 
     @Override
     public HateoasResponseBuilder each(String id, String rel, String... entityFields) {
@@ -90,10 +91,55 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
     }
 
     @Override
+    public HateoasResponse.HateoasResponseBuilder links(HateoasLink... links) {
+        return link(FieldPath.EMPTY_PATH, new FixedLinkProducer(Arrays.asList(links)));
+    }
+
+    @Override
     public HateoasResponseBuilder each(LinkProducer<?> linkProducer) {
         CollectionWrapperStrategy collectionWrapperStrategy = HateoasResponseBuilder.getCollectionWrapperStrategy();
         return link(FieldPath.path(collectionWrapperStrategy.rowsFieldName()), linkProducer);
     }
+
+    //-------------------------
+
+
+    @Override
+    public HateoasResponseBuilder link(FieldPath fieldPath, String id, String rel, ParamExpander... paramExpanders) {
+        return link(fieldPath, new ParamExpandingLinkProducer(id, rel, paramExpanders));
+    }
+
+    @Override
+    public HateoasResponseBuilder selfLink(FieldPath fieldPath, String id, ParamExpander... paramExpanders) {
+        return link(fieldPath, id, AtomRels.SELF, paramExpanders);
+    }
+
+    @Override
+    public HateoasResponseBuilder selfLink(String id, ParamExpander... paramExpanders) {
+        return link(id, AtomRels.SELF, paramExpanders);
+    }
+
+    @Override
+    public HateoasResponseBuilder link(String id, String rel, ParamExpander... paramExpanders) {
+
+        ParamExpandingLinkProducer linkProducer = new ParamExpandingLinkProducer(id, rel, paramExpanders);
+
+        return links(linkProducer.getLinks(entity).toArray(new HateoasLink[0]));
+    }
+
+    @Override
+    public HateoasResponseBuilder each(String id, String rel, ParamExpander... paramExpanders) {
+        return each(new ParamExpandingLinkProducer(id, rel, paramExpanders));
+    }
+
+    @Override
+    public HateoasResponseBuilder selfEach(String id, ParamExpander... paramExpanders) {
+        return each(id, AtomRels.SELF, paramExpanders);
+    }
+
+
+    //-------------------------
+
 
     public HateoasResponseBuilderImpl() {
     }
@@ -137,19 +183,19 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
                 newEntity = collectionWrapperStrategy.wrapRootCollection((Collection<Object>) entity);
             }
 
-            Set<Entry<FieldPath,ChainedLinkProducer>> entries = linkMappings.entrySet();
+            Set<Entry<FieldPath, ChainedLinkProducer>> entries = linkMappings.entrySet();
             for (Entry<FieldPath, ChainedLinkProducer> entry : entries) {
                 newEntity = entry.getKey().injectLinks(newEntity, linkInjector, entry.getValue(), verbosity);
             }
         }
 
         final HateoasResponse r = new HateoasResponseImpl(statusType,
-                                                          getHeaders(), newEntity, entityType);
+                getHeaders(), newEntity, entityType);
         reset();
         return r;
     }
 
-    public HateoasResponse render(String template){
+    public HateoasResponse render(String template) {
         HateoasLinkInjector<Object> linkInjector = HateoasResponseBuilder.getLinkInjector();
 
         CollectionWrapperStrategy collectionWrapperStrategy = HateoasResponseBuilder.getCollectionWrapperStrategy();
@@ -161,7 +207,7 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
                 newEntity = collectionWrapperStrategy.wrapRootCollection((Collection<Object>) entity);
             }
 
-            Set<Entry<FieldPath,ChainedLinkProducer>> entries = linkMappings.entrySet();
+            Set<Entry<FieldPath, ChainedLinkProducer>> entries = linkMappings.entrySet();
             for (Entry<FieldPath, ChainedLinkProducer> entry : entries) {
                 Object oldEntity = newEntity;
                 newEntity = entry.getKey().injectLinks(newEntity, linkInjector, entry.getValue(), verbosity);
@@ -376,6 +422,47 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
             getHeaders().remove(name);
         }
         return this;
+    }
+
+    private final static class ParamExpandingLinkProducer implements LinkProducer<Object> {
+
+        private final String id;
+        private final String rel;
+        private final ParamExpander[] paramExpanders;
+
+        private ParamExpandingLinkProducer(String id, String rel, ParamExpander... paramExpanders) {
+            this.id = id;
+            this.rel = rel;
+            this.paramExpanders = paramExpanders;
+        }
+
+        @Override
+        public Collection<HateoasLink> getLinks(Object entity) {
+            Map<String, Object> queryParams = new LinkedHashMap<String, Object>();
+
+            LinkedList<Object> argumentList = new LinkedList<Object>();
+
+            for (ParamExpander paramExpander : paramExpanders) {
+
+                if (paramExpander instanceof ParamExpander.QueryParamExpander) {
+                    ParamExpander.QueryParamExpander expander = (ParamExpander.QueryParamExpander) paramExpander;
+                    queryParams.put(expander.getName(), expander.getValue());
+
+                } else if (paramExpander instanceof ParamExpander.ReflectionPathParamExpander) {
+
+                    ParamExpander.ReflectionPathParamExpander expander = (ParamExpander.ReflectionPathParamExpander) paramExpander;
+                    Object fieldValue = ReflectionUtils.getFieldValueHierarchical(entity, expander.getField());
+                    argumentList.add(fieldValue);
+
+                } else if (paramExpander instanceof ParamExpander.PathParamExpander) {
+
+                    ParamExpander.PathParamExpander expander = (ParamExpander.PathParamExpander) paramExpander;
+                    argumentList.add(expander.getValue());
+
+                }
+            }
+            return Collections.singletonList(makeLink(id, rel, queryParams, argumentList.toArray()));
+        }
     }
 
     private final static class ReflectionBasedLinkProducer implements LinkProducer<Object> {

@@ -20,12 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -116,10 +114,15 @@ public class DefaultHateoasContext implements HateoasContext {
                             + "' mapped in class " + clazz
                             + " is already mapped from another class");
                 }
+
+
+                LinkableParameterInfo[] parameterInfo = extractMethodParameterInfo(method);
+
                 LinkableInfo linkableInfo = new LinkableInfo(id, path,
                         httpMethod, consumes, produces,
                         linkAnnotation.label(), linkAnnotation.description(),
-                        linkAnnotation.templateClass());
+                        linkAnnotation.templateClass(), parameterInfo);
+
                 linkableMapping.put(id, linkableInfo);
             } else {
                 logger.warn("Method {} is missing Linkable annotation", method);
@@ -137,6 +140,38 @@ public class DefaultHateoasContext implements HateoasContext {
                 mapClass(subResourceType, rootPath + path);
             }
         }
+    }
+
+    private LinkableParameterInfo[] extractMethodParameterInfo(Method method) {
+        List<LinkableParameterInfo> parameterInfoList = new LinkedList<LinkableParameterInfo>();
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+
+        for (int i = 0; i < parameterTypes.length; i++) {
+            Annotation[] annotations = parameterAnnotations[i];
+
+            String  parameterName = null;
+            String defaultValue = null;
+
+            for (Annotation annotation : annotations) {
+                if(annotation instanceof QueryParam){
+                    parameterName = ((QueryParam)annotation).value();
+                }
+                if(annotation instanceof DefaultValue){
+                    defaultValue = ((DefaultValue)annotation).value();
+                }
+            }
+
+            if(parameterName != null){
+                logger.debug("Found QueryParam: {}", parameterName);
+
+                parameterInfoList.add(new LinkableParameterInfo(parameterName, defaultValue));
+            }
+            if(defaultValue != null){
+                logger.debug("Found DefaultValue: {}", defaultValue);
+            }
+        }
+        return parameterInfoList.toArray(new LinkableParameterInfo[0]);
     }
 
     private String[] getConsumes(Method method) {

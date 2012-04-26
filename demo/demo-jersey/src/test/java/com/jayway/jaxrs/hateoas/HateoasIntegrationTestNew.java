@@ -70,16 +70,19 @@ public class HateoasIntegrationTestNew extends JerseyTest {
 
     @Test
     public void verifyGetCustomer() {
-        InputStream customersResponse = expect().
+        String customersResponse = expect().
                 body("rows.size()", is(2)).
                 body("rows[0].name", equalTo("Mattias")).
-                body("rows[0].links.size()", is(1)).
+                body("rows[0].links.size()", is(3)).
                 body("rows[1].name", equalTo("Kalle")).
-                body("rows[1].links.size()", is(1)).
+                body("rows[1].links.size()", is(3)).
                 statusCode(200).
-                when().get(customersHref).asInputStream();
+                when().get(customersHref).asString();
 
         JsonPath jsonPath = JsonPath.from(customersResponse);
+
+        System.out.println(customersResponse);
+
         String customerHref = jsonPath.getString("rows[0].links[0].href");
 
         expect().

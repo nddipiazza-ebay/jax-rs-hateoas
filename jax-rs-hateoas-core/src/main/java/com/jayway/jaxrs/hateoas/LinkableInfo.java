@@ -31,10 +31,18 @@ public final class LinkableInfo {
 	private final Class<?> templateClass;
 	private final String[] consumes;
 	private final String label;
+    private final LinkableParameterInfo[] parameterInfo;
+
+    public LinkableInfo(String id, String methodPath,
+                           String httpMethod, String[] consumes, String[] produces,
+                           String label, String description, Class<?> templateClass) {
+        this(id, methodPath, httpMethod, consumes, produces, label, description, templateClass, new LinkableParameterInfo[0]);
+
+    }
 
 	public LinkableInfo(String id, String methodPath,
                         String httpMethod, String[] consumes, String[] produces,
-                        String label, String description, Class<?> templateClass) {
+                        String label, String description, Class<?> templateClass, LinkableParameterInfo[] parameterInfo) {
 		this.id = id;
 		this.methodPath = methodPath;
 		this.httpMethod = httpMethod;
@@ -43,6 +51,7 @@ public final class LinkableInfo {
 		this.label = label;
 		this.description = description;
 		this.templateClass = templateClass;
+        this.parameterInfo = parameterInfo;
 	}
 
 	public Class<?> getTemplateClass() {
@@ -77,7 +86,11 @@ public final class LinkableInfo {
 		return label;
 	}
 
-	@Override
+    public LinkableParameterInfo[] getParameterInfo() {
+        return parameterInfo;
+    }
+
+    @Override
 	public String toString() {
 		return ToStringBuilder.reflectionToString(this);
 	}

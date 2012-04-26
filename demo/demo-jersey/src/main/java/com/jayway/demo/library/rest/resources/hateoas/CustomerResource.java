@@ -22,7 +22,10 @@ import com.jayway.demo.library.domain.factory.RepositoryFactory;
 import com.jayway.demo.library.rest.dto.CustomerDto;
 import com.jayway.demo.library.rest.dto.LoanDto;
 import com.jayway.jaxrs.hateoas.Linkable;
+import com.jayway.jaxrs.hateoas.ParamExpander;
 import com.jayway.jaxrs.hateoas.core.HateoasResponse;
+import com.jayway.jaxrs.hateoas.support.AtomRels;
+import com.jayway.jaxrs.hateoas.support.FieldPath;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -46,7 +49,13 @@ public class CustomerResource {
         return HateoasResponse
                 .ok(CustomerDto.fromBeanCollection(customerRepository.getAllCustomers()))
                 .selfLink(LinkableIds.CUSTOMER_NEW_ID)
-                .selfEach(LinkableIds.CUSTOMER_DETAILS_ID, "id").build();
+                .each(LinkableIds.CUSTOMER_DETAILS_ID, AtomRels.VIA,  ParamExpander.field("id"), ParamExpander.queryParam("type", "FOOZZ"))
+                .selfEach(LinkableIds.CUSTOMER_DETAILS_ID, ParamExpander.value("custom"), ParamExpander.queryParam("foo-1", "bar"))
+                .link(LinkableIds.CUSTOMER_DETAILS_ID, "REL", ParamExpander.value("DUMMY-ID"), ParamExpander.queryParam("foo-2", "bar"))
+                .link(FieldPath.path("rows"), LinkableIds.CUSTOMER_DETAILS_ID, "FP", ParamExpander.value("PATH-ID"))
+
+                .build();
+
     }
 
     @POST
@@ -65,7 +74,8 @@ public class CustomerResource {
     @Path("/{id}")
     @Produces("application/vnd.demo.library.customer+json")
     @Linkable(LinkableIds.CUSTOMER_DETAILS_ID)
-    public Response getCustomer(@PathParam("id") Integer id) {
+    public Response getCustomer(@PathParam("id") Integer id,
+                                @QueryParam("type") @DefaultValue("DEF") String type) {
         return HateoasResponse
                 .ok(CustomerDto.fromBean(customerRepository.getById(id)))
                 .link(LinkableIds.CUSTOMER_LOANS_ID, Rels.LOANS, id).build();
