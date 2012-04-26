@@ -31,6 +31,9 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.util.Collection;
 
+import static com.jayway.jaxrs.hateoas.ParamExpander.field;
+import static com.jayway.jaxrs.hateoas.ParamExpander.queryParam;
+
 @Path("/library/customers")
 public class CustomerResource {
 
@@ -50,7 +53,8 @@ public class CustomerResource {
                 .ok(CustomerDto.fromBeanCollection(customerRepository.getAllCustomers()))
                 .selfLink(LinkableIds.CUSTOMER_NEW_ID)
                 .each(LinkableIds.CUSTOMER_DETAILS_ID, AtomRels.VIA,  ParamExpander.field("id"), ParamExpander.queryParam("type", "FOOZZ"))
-                .selfEach(LinkableIds.CUSTOMER_DETAILS_ID, ParamExpander.value("custom"), ParamExpander.queryParam("foo-1", "bar"))
+                .selfEach(LinkableIds.CUSTOMER_DETAILS_ID, field("id"), queryParam("foo-1", "bar"))
+                //.selfEach(LinkableIds.CUSTOMER_DETAILS_ID, ParamExpander.value("custom"), ParamExpander.queryParam("foo-1", "bar"))
                 .link(LinkableIds.CUSTOMER_DETAILS_ID, "REL", ParamExpander.value("DUMMY-ID"), ParamExpander.queryParam("foo-2", "bar"))
                 .link(FieldPath.path("rows"), LinkableIds.CUSTOMER_DETAILS_ID, "FP", ParamExpander.value("PATH-ID"))
 

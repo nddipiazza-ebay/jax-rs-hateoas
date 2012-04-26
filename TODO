@@ -32,4 +32,23 @@
 - Javascript client improvements - DONE
 
 
+How to release
+
+- Run mvn release:prepare -Prelease -DautoVersionSubmodules=true
+- Run mvn release:perform -Prelease
+
+
+Snapshot release
+
+mvn clean deploy -DperformRelease=true
+
+<repositories>
+        <repository>
+            <id>sonatype</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <snapshots />
+        </repository>
+</repositories>
+
+
 
