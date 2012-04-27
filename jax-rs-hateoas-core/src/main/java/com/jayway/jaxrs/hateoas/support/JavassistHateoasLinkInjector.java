@@ -14,18 +14,19 @@
  */
 package com.jayway.jaxrs.hateoas.support;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.jayway.jaxrs.hateoas.*;
+import com.jayway.jaxrs.hateoas.HateoasInjectException;
+import com.jayway.jaxrs.hateoas.HateoasLinkInjector;
+import com.jayway.jaxrs.hateoas.HateoasVerbosity;
+import com.jayway.jaxrs.hateoas.LinkProducer;
 import javassist.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,14 +41,14 @@ public class JavassistHateoasLinkInjector implements HateoasLinkInjector<Object>
 
     private static final Logger log = LoggerFactory.getLogger(JavassistHateoasLinkInjector.class);
 
-	private static final ClassPool CLASS_POOL = ClassPool.getDefault();
+    private static final ClassPool CLASS_POOL = ClassPool.getDefault();
 
-	private final static Map<String, Class<?>> TRANSFORMED_CLASSES = new HashMap<String, Class<?>>();
+    private final static Map<String, Class<?>> TRANSFORMED_CLASSES = new HashMap<String, Class<?>>();
 
-	static {
-		CLASS_POOL.appendClassPath(new LoaderClassPath(
-				JavassistHateoasLinkInjector.class.getClassLoader()));
-	}
+    static {
+        CLASS_POOL.appendClassPath(new LoaderClassPath(
+                JavassistHateoasLinkInjector.class.getClassLoader()));
+    }
 
     private HateoasLinkInjector<Object> injector = new HateoasLinkBeanLinkInjector();
 
@@ -56,29 +57,42 @@ public class JavassistHateoasLinkInjector implements HateoasLinkInjector<Object>
         return true;
     }
 
-	@Override
-	public Object injectLinks(Object entity, LinkProducer<Object> linkProducer,
-			final HateoasVerbosity verbosity) {
+    @Override
+    public Object injectLinks(Object entity, LinkProducer<Object> linkProducer,
+                              final HateoasVerbosity verbosity) {
 
-		if (entity == null) {
-			return null;
-		}
+        if (entity == null) {
+            return null;
+        }
 
 
-		String newClassName = entity.getClass().getPackage().getName() + "." + entity.getClass().getSimpleName() + "_generated";
+        String newClassName = entity.getClass().getPackage().getName() + "." + entity.getClass().getSimpleName() + "_generated";
 
-		Class<?> clazz;
-		if (!TRANSFORMED_CLASSES.containsKey(newClassName)) {
-			synchronized (this) {
-				try {
-					CtClass newClass = CLASS_POOL.makeClass(newClassName);
-					newClass.setSuperclass(CLASS_POOL.get(entity.getClass().getName()));
-					CtConstructor ctConstructor = new CtConstructor(new CtClass[0], newClass);
-					ctConstructor.setBody("super();");
-					newClass.addConstructor(ctConstructor);
+        Class<?> clazz;
+        if (!TRANSFORMED_CLASSES.containsKey(newClassName)) {
+            synchronized (this) {
+                try {
+                    log.debug("Creating HATEOAS subclass for DTO : {}", entity.getClass());
 
-					CtField newField = CtField.make("public java.util.Collection links;", newClass);
-					newClass.addField(newField);
+                    boolean valid = false;
+                    for (Constructor<?> c : entity.getClass().getConstructors()) {
+                        if (c.getParameterTypes().length == 0) {
+                            valid = true;
+                            break;
+                        }
+                    }
+                    if (!valid){
+                        throw new HateoasInjectException("DTO's must have no arg constructor. Check " + entity.getClass().getName());
+                    }
+
+                    CtClass newClass = CLASS_POOL.makeClass(newClassName);
+                    newClass.setSuperclass(CLASS_POOL.get(entity.getClass().getName()));
+                    CtConstructor ctConstructor = new CtConstructor(new CtClass[0], newClass);
+                    ctConstructor.setBody("super();");
+                    newClass.addConstructor(ctConstructor);
+
+                    CtField newField = CtField.make("public java.util.Collection links;", newClass);
+                    newClass.addField(newField);
 
                     CtMethod linksGetterMethod = CtMethod.make("public java.util.Collection getLinks(){ return this.links; }", newClass);
                     newClass.addMethod(linksGetterMethod);
@@ -94,28 +108,28 @@ public class JavassistHateoasLinkInjector implements HateoasLinkInjector<Object>
                     for (Field field : ReflectionUtils.getFieldsHierarchical(entity.getClass())) {
                         cloneMethodBody.append("com.jayway.jaxrs.hateoas.support.ReflectionUtils.setFieldHierarchical(this, \"" + field.getName() + "\", com.jayway.jaxrs.hateoas.support.ReflectionUtils.getFieldValueHierarchical(other, \"" + field.getName() + "\"));");
                     }
-                    String method = "public void hateoasCopy(" + entity.getClass().getName() + " other ){ "+ cloneMethodBody.toString() +"}";
-
-                    System.out.println(method);
+                    String method = "public void hateoasCopy(" + entity.getClass().getName() + " other ){ " + cloneMethodBody.toString() + "}";
 
                     CtMethod cloneMethod = CtMethod.make(method, newClass);
                     newClass.addMethod(cloneMethod);
 
-					URLClassLoader classLoader = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
-					clazz = newClass.toClass(classLoader, this.getClass().getProtectionDomain());
+                    URLClassLoader classLoader = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
+                    clazz = newClass.toClass(classLoader, this.getClass().getProtectionDomain());
 
-					TRANSFORMED_CLASSES.put(newClassName, clazz);
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-			}
-		} else {
-			clazz = TRANSFORMED_CLASSES.get(newClassName);
-		}
+                    TRANSFORMED_CLASSES.put(newClassName, clazz);
+                } catch (Exception e) {
+                    if(e instanceof HateoasInjectException){
+                        throw (HateoasInjectException)e;
+                    }
+                    throw new RuntimeException(e);
+                }
+            }
+        } else {
+            clazz = TRANSFORMED_CLASSES.get(newClassName);
+        }
 
         Object newInstance = null;
         try {
-            //newInstance = clazz.getConstructor(entity.getClass()).newInstance(entity);
             newInstance = clazz.newInstance();
             Method copyMethod = newInstance.getClass().getMethod("hateoasCopy", entity.getClass());
             copyMethod.invoke(newInstance, entity);
@@ -124,6 +138,6 @@ public class JavassistHateoasLinkInjector implements HateoasLinkInjector<Object>
         }
 
         return injector.injectLinks(newInstance, linkProducer, verbosity);
-	}
+    }
 
 }
