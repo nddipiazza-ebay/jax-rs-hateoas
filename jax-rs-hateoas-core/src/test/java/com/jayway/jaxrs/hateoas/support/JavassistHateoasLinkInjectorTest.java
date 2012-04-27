@@ -15,6 +15,7 @@
 package com.jayway.jaxrs.hateoas.support;
 
 import com.google.common.collect.Iterables;
+import com.jayway.jaxrs.hateoas.HateoasInjectException;
 import com.jayway.jaxrs.hateoas.HateoasLink;
 import com.jayway.jaxrs.hateoas.HateoasVerbosity;
 import com.jayway.jaxrs.hateoas.core.HateoasResponseBuilderImpl.FixedLinkProducer;
@@ -65,6 +66,16 @@ public class JavassistHateoasLinkInjectorTest {
     }
 
     @SuppressWarnings("unchecked")
+    @Test(expected = HateoasInjectException.class)
+    public void defaultConstructorIsRequired() {
+        DummyEntityNoDefaultConstructor dummyEntity = new DummyEntityNoDefaultConstructor("someId");
+
+        tested.injectLinks(dummyEntity, linkProducer, HateoasVerbosity.MINIMUM);
+
+
+    }
+
+    @SuppressWarnings("unchecked")
     @Test
     public void linksFieldIsInjectedAutomaticallyInSublass() {
         DummySubClass dummyEntity = new DummySubClass("someId", 1L);
@@ -82,7 +93,22 @@ public class JavassistHateoasLinkInjectorTest {
     }
 
 
+    public static class DummyEntityNoDefaultConstructor {
+        private String id;
 
+
+        public DummyEntityNoDefaultConstructor(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+    }
 
     public static class DummyEntity {
         private String id;
