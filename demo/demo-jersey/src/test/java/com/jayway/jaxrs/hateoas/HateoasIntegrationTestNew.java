@@ -41,6 +41,7 @@ public class HateoasIntegrationTestNew extends JerseyTest {
     private String customersHref;
     private String loansHref;
     private String booksHref;
+    private String searchHref;
 
     @BeforeClass
     public static void registerParsers() {
@@ -66,7 +67,40 @@ public class HateoasIntegrationTestNew extends JerseyTest {
         customersHref = jsonPath.<String, String>getMap("links.find {link -> link.rel == 'customers'}").get("href");
         loansHref = jsonPath.<String, String>getMap("links.find {link -> link.rel == 'loans'}").get("href");
         booksHref = jsonPath.<String, String>getMap("links.find {link -> link.rel == 'books'}").get("href");
+        searchHref = jsonPath.<String, String>getMap("links.find {link -> link.rel == 'search'}").get("href");
     }
+
+
+    @Test
+    public void verifyGetSearchItems() {
+        String customersResponse = expect().
+                //body("rows.size()", is(2)).
+                //body("rows[0].name", equalTo("Mattias")).
+                //body("rows[0].links.size()", is(3)).
+                //body("rows[1].name", equalTo("Kalle")).
+                //body("rows[1].links.size()", is(3)).
+                statusCode(200).
+                when().get(searchHref).asString();
+
+        System.out.println(customersResponse);
+
+        /*
+        JsonPath jsonPath = JsonPath.from(customersResponse);
+
+        System.out.println(customersResponse);
+
+        String customerHref = jsonPath.getString("rows[0].links[0].href");
+
+        expect().
+                body("name", equalTo("Mattias")).
+                body("id", is(0)).
+                body("links.size()", is(1)).
+                body("links[0].rel", equalTo("loans")).
+                statusCode(200).
+                when().get(customerHref);
+                */
+    }
+
 
     @Test
     public void verifyGetCustomer() {

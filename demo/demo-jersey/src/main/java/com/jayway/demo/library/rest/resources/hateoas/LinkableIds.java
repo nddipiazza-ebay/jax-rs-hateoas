@@ -30,4 +30,10 @@ public class LinkableIds {
 	static final String CUSTOMER_LIST_ID = "customer.list";
 	static final String CUSTOMER_NEW_ID = "customer.new";
 
+
+    static final String SEARCH_ITEM_ID = "item.search";
+
+
+
+
 }

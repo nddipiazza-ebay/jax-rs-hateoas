@@ -23,4 +23,5 @@ public final class Rels {
     public final static String BOOK = "book";
     public final static String CUSTOMERS = "customers";
     public final static String CUSTOMER = "customer";
+    public final static String SEARCH = "search";
 }

@@ -32,6 +32,7 @@ public class LibraryResource {
 		return HateoasResponse.ok(new RootDto())
 				.link(LinkableIds.BOOKS_LIST_ID, Rels.BOOKS)
 				.link(LinkableIds.CUSTOMER_LIST_ID, Rels.CUSTOMERS)
-				.link(LinkableIds.LOANS_LIST_ID, Rels.LOANS).build();
+				.link(LinkableIds.LOANS_LIST_ID, Rels.LOANS)
+				.link(LinkableIds.SEARCH_ITEM_ID, Rels.SEARCH, "foo").build();
 	}
 }
