@@ -22,6 +22,7 @@ import com.jayway.jaxrs.hateoas.core.HateoasResponse.HateoasResponseBuilder;
 import com.jayway.jaxrs.hateoas.support.DefaultCollectionWrapperStrategy;
 import com.jayway.jaxrs.hateoas.support.DefaultHateoasViewFactory;
 import com.jayway.jaxrs.hateoas.support.JavassistHateoasLinkInjector;
+import com.jayway.jaxrs.hateoas.support.StrategyBasedLinkInjector;
 
 import javax.ws.rs.core.Application;
 import java.util.Set;
@@ -39,7 +40,7 @@ public class HateoasApplication extends Application {
 	}
 
 	public HateoasApplication(HateoasVerbosity verbosity) {
-		this(new JavassistHateoasLinkInjector(), new DefaultCollectionWrapperStrategy(), verbosity);
+		this(new StrategyBasedLinkInjector(), new DefaultCollectionWrapperStrategy(), verbosity);
 	}
 
 	public HateoasApplication(HateoasLinkInjector<Object> linkInjector,
