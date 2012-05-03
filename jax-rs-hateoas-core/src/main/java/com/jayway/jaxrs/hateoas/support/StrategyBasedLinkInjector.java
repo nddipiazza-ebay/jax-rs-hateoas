@@ -8,7 +8,9 @@ import com.jayway.jaxrs.hateoas.LinkProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Strategy based link injector that tries to inject the links with all configured {@link HateoasLinkInjector}.
@@ -19,7 +21,9 @@ public class StrategyBasedLinkInjector implements HateoasLinkInjector<Object> {
 
     private static final Logger log = LoggerFactory.getLogger(StrategyBasedLinkInjector.class);
 
-    private List<HateoasLinkInjector<Object>> strategies; 
+    private List<HateoasLinkInjector<Object>> strategies;
+
+    private static final Map<Class<?>, HateoasLinkInjector<Object>> INJECTOR_MAPPING = new HashMap<Class<?>, HateoasLinkInjector<Object>>();
     
     public StrategyBasedLinkInjector() {
         strategies = Lists.newArrayList();
@@ -36,14 +40,28 @@ public class StrategyBasedLinkInjector implements HateoasLinkInjector<Object> {
 
     @Override
     public Object injectLinks(Object entity, LinkProducer<Object> objectLinkProducer, HateoasVerbosity verbosity) {
-        for (HateoasLinkInjector<Object> strategy : strategies) {
-            log.debug("Trying link injector strategy : " + strategy.getClass().getName() );
+        if(!INJECTOR_MAPPING.containsKey(entity.getClass())){
+            synchronized (this) {
+                for (HateoasLinkInjector<Object> strategy : strategies) {
+                    log.debug("Trying link injector strategy : " + strategy.getClass().getName() );
 
-            if(strategy.canInject(entity)){
-                log.debug("Selected link injector " + strategy.getClass().getName() + " for entity : " + entity.getClass().getName());
-                return strategy.injectLinks(entity, objectLinkProducer, verbosity);
+                    if(strategy.canInject(entity)){
+
+                        log.debug("Caching injector strategy {} for class {}", strategy.getClass().getSimpleName(), entity.getClass().getSimpleName());
+
+                        INJECTOR_MAPPING.put(entity.getClass(), strategy);
+                        break;
+                    }
+                }
             }
         }
-        throw new HateoasInjectException("No suitable injector found for " + entity.getClass());
+
+        HateoasLinkInjector<Object> injector = INJECTOR_MAPPING.get(entity.getClass());
+
+        if(injector == null){
+            throw new HateoasInjectException("No suitable injector found for " + entity.getClass());
+        }
+
+        return injector.injectLinks(entity, objectLinkProducer, verbosity);
     }
 }
