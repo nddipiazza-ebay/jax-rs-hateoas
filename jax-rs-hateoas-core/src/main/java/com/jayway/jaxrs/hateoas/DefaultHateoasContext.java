@@ -125,7 +125,7 @@ public class DefaultHateoasContext implements HateoasContext {
 
                 linkableMapping.put(id, linkableInfo);
             } else {
-                logger.warn("Method {} is missing Linkable annotation", method);
+                logger.info("Method {} is missing Linkable annotation", method);
             }
         } else {
             //this might be a sub resource method
