@@ -113,8 +113,11 @@ public class JavassistHateoasLinkInjector implements HateoasLinkInjector<Object>
                     CtMethod cloneMethod = CtMethod.make(method, newClass);
                     newClass.addMethod(cloneMethod);
 
-                    URLClassLoader classLoader = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
-                    clazz = newClass.toClass(classLoader, this.getClass().getProtectionDomain());
+                    //URLClassLoader classLoader = new URLClassLoader(new URL[0], this.getClass().getClassLoader());
+                    //clazz = newClass.toClass(classLoader, this.getClass().getProtectionDomain());
+
+                    URLClassLoader classLoader = new URLClassLoader(new URL[0], entity.getClass().getClassLoader());
+                    clazz = newClass.toClass(classLoader, entity.getClass().getProtectionDomain());
 
                     TRANSFORMED_CLASSES.put(newClassName, clazz);
                 } catch (Exception e) {
