@@ -125,7 +125,13 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>1.8.5</version>
+                <version>4.0.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.12.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -172,6 +178,21 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration combine.self="override">
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                    <argLine>@common.argfile</argLine>
+                    <forkedProcessExitTimeoutInSeconds>120</forkedProcessExitTimeoutInSeconds>
+                    <excludes>
+                        <exclude>**/*$*</exclude>
+                    </excludes>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
