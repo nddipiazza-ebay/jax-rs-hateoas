@@ -1,4 +1,4 @@
-JAX-RS-HATEOAS is a small extension to JAX-RS to enable hypermedia in JAX-RS 1.x applications.
+JAX-RS-HATEOAS is a small extension to JAX-RS to enable hypermedia in JAX-RS 3.x applications.
 
 In 1.0.0 release I have removed the spring servlet. And focused on the support of Jersey 3.x only.
 
