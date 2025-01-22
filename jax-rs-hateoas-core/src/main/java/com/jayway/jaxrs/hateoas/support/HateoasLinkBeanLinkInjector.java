@@ -25,12 +25,7 @@ public class HateoasLinkBeanLinkInjector implements HateoasLinkInjector<Object> 
         HateoasLinkBean linkBean = (HateoasLinkBean) entity;
 
         Collection<Map<String,Object>> links = Collections2.transform(linkProducer.getLinks(entity),
-                new Function<HateoasLink, Map<String, Object>>() {
-                    @Override
-                    public Map<String, Object> apply(HateoasLink from) {
-                        return from.toMap(verbosity);
-                    }
-                });
+				from -> from.toMap(verbosity));
 
         linkBean.setLinks(links);
 

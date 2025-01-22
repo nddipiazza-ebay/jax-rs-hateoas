@@ -14,20 +14,46 @@
  */
 package com.jayway.jaxrs.hateoas.core;
 
-import com.jayway.jaxrs.hateoas.*;
+import com.jayway.jaxrs.hateoas.CollectionWrapperStrategy;
+import com.jayway.jaxrs.hateoas.HateoasLink;
+import com.jayway.jaxrs.hateoas.HateoasLinkInjector;
+import com.jayway.jaxrs.hateoas.HateoasVerbosity;
+import com.jayway.jaxrs.hateoas.LinkProducer;
+import com.jayway.jaxrs.hateoas.ParamExpander;
 import com.jayway.jaxrs.hateoas.core.HateoasResponse.HateoasResponseBuilder;
 import com.jayway.jaxrs.hateoas.support.AtomRels;
 import com.jayway.jaxrs.hateoas.support.FieldPath;
 import com.jayway.jaxrs.hateoas.support.ReflectionUtils;
 import com.jayway.jaxrs.hateoas.web.RequestContext;
-import com.sun.jersey.core.header.OutBoundHeaders;
-import com.sun.jersey.core.spi.factory.ResponseImpl;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Link;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Variant;
+import org.apache.commons.lang.NotImplementedException;
 
-import javax.ws.rs.core.*;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+
+import static com.jayway.jaxrs.hateoas.core.HateoasResponseImpl.toStatusType;
 
 /**
  * Default implementation of {@link HateoasResponseBuilder}.
@@ -36,16 +62,11 @@ import java.util.Map.Entry;
  * @author Kalle Stenflo
  */
 public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseBuilder {
-
     private Response.StatusType statusType = Response.Status.NO_CONTENT;
-
-    private OutBoundHeaders headers;
-
+    private MultivaluedMap<String, Object> headers;
     private Object entity;
-
     private Type entityType;
-
-    private final Map<FieldPath, ChainedLinkProducer> linkMappings = new HashMap<FieldPath, ChainedLinkProducer>();
+    private final Map<FieldPath, ChainedLinkProducer> linkMappings = new HashMap<>();
 
     @Override
     public HateoasResponseBuilder link(String id, String rel, Object... params) {
@@ -67,10 +88,8 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
         if (!linkMappings.containsKey(fieldPath)) {
             linkMappings.put(fieldPath, new ChainedLinkProducer());
         }
-
         ChainedLinkProducer chainedLinkProducer = linkMappings.get(fieldPath);
         chainedLinkProducer.append(linkProducer);
-
         return this;
     }
 
@@ -78,7 +97,6 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
     public HateoasResponseBuilder selfLink(String id, Object... params) {
         return link(id, AtomRels.SELF, params);
     }
-
 
     @Override
     public HateoasResponseBuilder each(String id, String rel, String... entityFields) {
@@ -91,7 +109,7 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
     }
 
     @Override
-    public HateoasResponse.HateoasResponseBuilder links(HateoasLink... links) {
+    public HateoasResponseBuilder links(HateoasLink... links) {
         return link(FieldPath.EMPTY_PATH, new FixedLinkProducer(Arrays.asList(links)));
     }
 
@@ -100,9 +118,6 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
         CollectionWrapperStrategy collectionWrapperStrategy = HateoasResponseBuilder.getCollectionWrapperStrategy();
         return link(FieldPath.path(collectionWrapperStrategy.rowsFieldName()), linkProducer);
     }
-
-    //-------------------------
-
 
     @Override
     public HateoasResponseBuilder link(FieldPath fieldPath, String id, String rel, ParamExpander... paramExpanders) {
@@ -121,9 +136,7 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
 
     @Override
     public HateoasResponseBuilder link(String id, String rel, ParamExpander... paramExpanders) {
-
         ParamExpandingLinkProducer linkProducer = new ParamExpandingLinkProducer(id, rel, paramExpanders);
-
         return links(linkProducer.getLinks(entity).toArray(new HateoasLink[0]));
     }
 
@@ -137,10 +150,6 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
         return each(id, AtomRels.SELF, paramExpanders);
     }
 
-
-    //-------------------------
-
-
     public HateoasResponseBuilderImpl() {
     }
 
@@ -148,32 +157,28 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
         this.statusType = that.statusType;
         this.entity = that.entity;
         if (that.headers != null) {
-            this.headers = new OutBoundHeaders(that.headers);
+            this.headers = new MultivaluedHashMap<>(that.headers);
         } else {
             this.headers = null;
         }
         this.entityType = that.entityType;
     }
 
-    public HateoasResponse.HateoasResponseBuilder entityWithType(Object entity,
-                                                                 Type entityType) {
+    public HateoasResponseBuilder entityWithType(Object entity, Type entityType) {
         this.entity = entity;
         this.entityType = entityType;
         return this;
     }
 
-    private OutBoundHeaders getHeaders() {
+    private MultivaluedMap<String, Object> getHeaders() {
         if (headers == null)
-            headers = new OutBoundHeaders();
+            headers = new MultivaluedHashMap<>();
         return headers;
     }
-
-    // Response.Builder
 
     @SuppressWarnings("unchecked")
     public HateoasResponse build() {
         HateoasLinkInjector<Object> linkInjector = HateoasResponseBuilder.getLinkInjector();
-
         CollectionWrapperStrategy collectionWrapperStrategy = HateoasResponseBuilder.getCollectionWrapperStrategy();
         HateoasVerbosity verbosity = HateoasVerbosity.valueOf(RequestContext.getRequestContext().getVerbosityHeader());
 
@@ -189,15 +194,13 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
             }
         }
 
-        final HateoasResponse r = new HateoasResponseImpl(statusType,
-                getHeaders(), newEntity, entityType);
+        final HateoasResponse r = new HateoasResponseImpl(statusType, getHeaders(), newEntity, entityType);
         reset();
         return r;
     }
 
     public HateoasResponse render(String template) {
         HateoasLinkInjector<Object> linkInjector = HateoasResponseBuilder.getLinkInjector();
-
         CollectionWrapperStrategy collectionWrapperStrategy = HateoasResponseBuilder.getCollectionWrapperStrategy();
         HateoasVerbosity verbosity = HateoasVerbosity.valueOf(RequestContext.getRequestContext().getVerbosityHeader());
 
@@ -209,9 +212,7 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
 
             Set<Entry<FieldPath, ChainedLinkProducer>> entries = linkMappings.entrySet();
             for (Entry<FieldPath, ChainedLinkProducer> entry : entries) {
-                Object oldEntity = newEntity;
                 newEntity = entry.getKey().injectLinks(newEntity, linkInjector, entry.getValue(), verbosity);
-                Object postEntity = newEntity;
             }
         }
 
@@ -229,66 +230,81 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
     }
 
     @Override
-    public HateoasResponse.HateoasResponseBuilder clone() {
+    public HateoasResponseBuilder clone() {
         return new HateoasResponseBuilderImpl(this);
     }
 
-    public HateoasResponse.HateoasResponseBuilder status(
-            Response.StatusType status) {
+    public HateoasResponseBuilder status(jakarta.ws.rs.core.Response.StatusType status) {
         if (status == null)
             throw new IllegalArgumentException();
         this.statusType = status;
         return this;
     }
 
-    ;
-
-    public HateoasResponse.HateoasResponseBuilder status(int status) {
-        return status(ResponseImpl.toStatusType(status));
+    public HateoasResponseBuilder status(int status) {
+        return status(toStatusType(status));
     }
 
-    public HateoasResponse.HateoasResponseBuilder entity(Object entity) {
+    @Override
+    public Response.ResponseBuilder status(int i, String s) {
+        return status(i);
+    }
+
+    public HateoasResponseBuilder entity(Object entity) {
         this.entity = entity;
         this.entityType = (entity != null) ? entity.getClass() : null;
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder type(MediaType type) {
-        headerSingle(HttpHeaders.CONTENT_TYPE, type);
+    @Override
+    public Response.ResponseBuilder entity(Object o, Annotation[] annotations) {
+        return entity(0);
+    }
+
+    @Override
+    public Response.ResponseBuilder allow(String... strings) {
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder type(String type) {
-        return type(type == null ? null : MediaType.valueOf(type));
+    @Override
+    public Response.ResponseBuilder allow(Set<String> set) {
+        return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder variant(Variant variant) {
+    public HateoasResponseBuilder type(jakarta.ws.rs.core.MediaType type) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE, type);
+        return this;
+    }
+
+    public HateoasResponseBuilder type(String type) {
+        return type(type == null ? null : jakarta.ws.rs.core.MediaType.valueOf(type));
+    }
+
+    public HateoasResponseBuilder variant(jakarta.ws.rs.core.Variant variant) {
         if (variant == null) {
-            type((MediaType) null);
+            type((jakarta.ws.rs.core.MediaType) null);
             language((String) null);
             encoding(null);
             return this;
         }
 
         type(variant.getMediaType());
-        // TODO set charset
         language(variant.getLanguage());
         encoding(variant.getEncoding());
 
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder variants(
-            List<Variant> variants) {
+    public HateoasResponseBuilder variants(List<jakarta.ws.rs.core.Variant> variants) {
         if (variants == null) {
-            header(HttpHeaders.VARY, null);
+            header(jakarta.ws.rs.core.HttpHeaders.VARY, null);
             return this;
         }
 
         if (variants.isEmpty())
             return this;
 
-        MediaType accept = variants.get(0).getMediaType();
+        jakarta.ws.rs.core.MediaType accept = variants.get(0).getMediaType();
         boolean vAccept = false;
 
         Locale acceptLanguage = variants.get(0).getLanguage();
@@ -299,23 +315,36 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
 
         for (Variant v : variants) {
             vAccept |= !vAccept && vary(v.getMediaType(), accept);
-            vAcceptLanguage |= !vAcceptLanguage
-                    && vary(v.getLanguage(), acceptLanguage);
-            vAcceptEncoding |= !vAcceptEncoding
-                    && vary(v.getEncoding(), acceptEncoding);
+            vAcceptLanguage |= !vAcceptLanguage && vary(v.getLanguage(), acceptLanguage);
+            vAcceptEncoding |= !vAcceptEncoding && vary(v.getEncoding(), acceptEncoding);
         }
 
         StringBuilder vary = new StringBuilder();
-        append(vary, vAccept, HttpHeaders.ACCEPT);
-        append(vary, vAcceptLanguage, HttpHeaders.ACCEPT_LANGUAGE);
-        append(vary, vAcceptEncoding, HttpHeaders.ACCEPT_ENCODING);
+        append(vary, vAccept, jakarta.ws.rs.core.HttpHeaders.ACCEPT);
+        append(vary, vAcceptLanguage, jakarta.ws.rs.core.HttpHeaders.ACCEPT_LANGUAGE);
+        append(vary, vAcceptEncoding, jakarta.ws.rs.core.HttpHeaders.ACCEPT_ENCODING);
 
         if (vary.length() > 0)
-            header(HttpHeaders.VARY, vary.toString());
+            header(jakarta.ws.rs.core.HttpHeaders.VARY, vary.toString());
         return this;
     }
 
-    private boolean vary(MediaType v, MediaType vary) {
+    @Override
+    public Response.ResponseBuilder links(Link... links) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public Response.ResponseBuilder link(URI uri, String s) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public Response.ResponseBuilder link(String s, String s1) {
+        throw new NotImplementedException();
+    }
+
+    private boolean vary(jakarta.ws.rs.core.MediaType v, MediaType vary) {
         return v != null && !v.equals(vary);
     }
 
@@ -335,83 +364,89 @@ public class HateoasResponseBuilderImpl extends HateoasResponse.HateoasResponseB
         }
     }
 
-    public HateoasResponse.HateoasResponseBuilder language(String language) {
-        headerSingle(HttpHeaders.CONTENT_LANGUAGE, language);
+    public HateoasResponseBuilder language(String language) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.CONTENT_LANGUAGE, language);
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder language(Locale language) {
-        headerSingle(HttpHeaders.CONTENT_LANGUAGE, language);
+    public HateoasResponseBuilder language(Locale language) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.CONTENT_LANGUAGE, language);
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder location(URI location) {
-        headerSingle(HttpHeaders.LOCATION, location);
+    public HateoasResponseBuilder location(URI location) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.LOCATION, location);
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder location(HateoasLink location) {
-        headerSingle(HttpHeaders.LOCATION, location.getHref());
+    public HateoasResponseBuilder location(HateoasLink location) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.LOCATION, location.getHref());
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder contentLocation(URI location) {
-        headerSingle(HttpHeaders.CONTENT_LOCATION, location);
+    public HateoasResponseBuilder contentLocation(URI location) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.CONTENT_LOCATION, location);
         return this;
     }
 
     public Response.ResponseBuilder encoding(String encoding) {
-        headerSingle(HttpHeaders.CONTENT_ENCODING, encoding);
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.CONTENT_ENCODING, encoding);
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder tag(EntityTag tag) {
-        headerSingle(HttpHeaders.ETAG, tag);
+    public HateoasResponseBuilder tag(jakarta.ws.rs.core.EntityTag tag) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.ETAG, tag);
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder tag(String tag) {
+    public HateoasResponseBuilder tag(String tag) {
         return tag(tag == null ? null : new EntityTag(tag));
     }
 
-    public HateoasResponse.HateoasResponseBuilder lastModified(Date lastModified) {
-        headerSingle(HttpHeaders.LAST_MODIFIED, lastModified);
+    @Override
+    public Response.ResponseBuilder variants(Variant... variants) {
+        return null;
+    }
+
+    public HateoasResponseBuilder lastModified(Date lastModified) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.LAST_MODIFIED, lastModified);
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder cacheControl(
-            CacheControl cacheControl) {
-        headerSingle(HttpHeaders.CACHE_CONTROL, cacheControl);
+    public HateoasResponseBuilder cacheControl(CacheControl cacheControl) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.CACHE_CONTROL, cacheControl);
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder expires(Date expires) {
-        headerSingle(HttpHeaders.EXPIRES, expires);
+    public HateoasResponseBuilder expires(Date expires) {
+        headerSingle(jakarta.ws.rs.core.HttpHeaders.EXPIRES, expires);
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder cookie(NewCookie... cookies) {
+    public HateoasResponseBuilder cookie(jakarta.ws.rs.core.NewCookie... cookies) {
         if (cookies != null) {
             for (NewCookie cookie : cookies)
-                header(HttpHeaders.SET_COOKIE, cookie);
+                header(jakarta.ws.rs.core.HttpHeaders.SET_COOKIE, cookie);
         } else {
             header(HttpHeaders.SET_COOKIE, null);
         }
         return this;
     }
 
-    public HateoasResponse.HateoasResponseBuilder header(String name,
-                                                         Object value) {
+    public HateoasResponseBuilder header(String name, Object value) {
         return header(name, value, false);
     }
 
-    public HateoasResponse.HateoasResponseBuilder headerSingle(String name,
-                                                               Object value) {
+    @Override
+    public Response.ResponseBuilder replaceAll(MultivaluedMap<String, Object> multivaluedMap) {
+        return null;
+    }
+
+    public HateoasResponseBuilder headerSingle(String name, Object value) {
         return header(name, value, true);
     }
 
-    public HateoasResponse.HateoasResponseBuilder header(String name,
-                                                         Object value, boolean single) {
+    public HateoasResponseBuilder header(String name, Object value, boolean single) {
         if (value != null) {
             if (single) {
                 getHeaders().putSingle(name, value);

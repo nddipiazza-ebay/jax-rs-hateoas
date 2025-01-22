@@ -1,7 +1,7 @@
 package com.jayway.jaxrs.hateoas.core.jersey;
 
 import com.jayway.jaxrs.hateoas.HateoasViewFactory;
-import com.sun.jersey.api.view.Viewable;
+import org.glassfish.jersey.server.mvc.Viewable;
 
 import java.util.Collections;
 

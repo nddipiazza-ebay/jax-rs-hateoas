@@ -16,9 +16,9 @@ package com.jayway.jaxrs.hateoas.web;
 
 import org.apache.commons.lang.StringUtils;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 
 /**

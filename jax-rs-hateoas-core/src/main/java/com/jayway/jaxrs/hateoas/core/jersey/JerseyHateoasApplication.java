@@ -17,10 +17,19 @@ package com.jayway.jaxrs.hateoas.core.jersey;
 import com.jayway.jaxrs.hateoas.*;
 import com.jayway.jaxrs.hateoas.core.HateoasConfigurationFactory;
 import com.jayway.jaxrs.hateoas.core.HateoasResponse.HateoasResponseBuilder;
-import com.sun.jersey.api.core.PackagesResourceConfig;
+import com.jayway.jaxrs.hateoas.web.RequestContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.core.UriBuilder;
+import org.apache.http.protocol.ResponseContent;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,31 +40,28 @@ import java.util.Set;
  * @author Mattias Hellborg Arthursson
  * @author Kalle Stenflo
  */
-public abstract class JerseyHateoasApplication extends PackagesResourceConfig {
-
+public abstract class JerseyHateoasApplication extends ResourceConfig {
     private static final Logger log = LoggerFactory.getLogger(JerseyHateoasApplication.class);
 
     /**
      * Creates a new Application with he given {@link HateoasVerbosity} level.
      *
      * @param verbosity the verbosity level to use in the application
-     * @param props     properties to be passed to {@link PackagesResourceConfig} constructor
+     * @param props     properties to be passed to {@link ResourceConfig} constructor
      */
     public JerseyHateoasApplication(HateoasVerbosity verbosity,
                                     Map<String, Object> props) {
         this(HateoasConfigurationFactory.createLinkInjector(props),
                 HateoasConfigurationFactory.createCollectionWrapperStrategy(props),
                 verbosity,
-                HateoasConfigurationFactory.createHateoasViewFactory(props, JerseyHateoasViewFactory.class.getName()),
-                props);
+                HateoasConfigurationFactory.createHateoasViewFactory(props, JerseyHateoasViewFactory.class.getName()));
     }
 
     /**
      * Creates a new Application based on Servlet init params. Note the HATEOAS
      * properties can be combined with standard Jersey properties defined in
-     * {@link com.sun.jersey.api.core.ResourceConfig}
+     * {@link ResourceConfig}
      *
-     * @param props properties to be passed to {@link PackagesResourceConfig} constructor
      * @see com.jayway.jaxrs.hateoas.core.HateoasConfigurationFactory#PROPERTY_HATEOAS_VERBOSITY
      * @see com.jayway.jaxrs.hateoas.core.HateoasConfigurationFactory#PROPERTY_HATEOAS_LINK_INJECTOR
      * @see com.jayway.jaxrs.hateoas.core.HateoasConfigurationFactory#PROPERTY_HATEOAS_COLLECTION_WRAPPER_STRATEGY
@@ -65,17 +71,13 @@ public abstract class JerseyHateoasApplication extends PackagesResourceConfig {
         this(HateoasConfigurationFactory.createLinkInjector(props),
                 HateoasConfigurationFactory.createCollectionWrapperStrategy(props),
                 HateoasConfigurationFactory.createVerbosity(props),
-                HateoasConfigurationFactory.createHateoasViewFactory(props, JerseyHateoasViewFactory.class.getName()),
-                props);
+                HateoasConfigurationFactory.createHateoasViewFactory(props, JerseyHateoasViewFactory.class.getName()));
     }
 
     public JerseyHateoasApplication(HateoasLinkInjector<Object> linkInjector,
                                     CollectionWrapperStrategy collectionWrapperStrategy,
                                     HateoasVerbosity verbosity,
-                                    HateoasViewFactory viewFactory,
-                                    Map<String, Object> props) {
-        super(props);
-
+                                    HateoasViewFactory viewFactory) {
         Set<Class<?>> allClasses = getClasses();
         for (Class<?> clazz : allClasses) {
             HateoasContextProvider.getDefaultContext().mapClass(clazz);
@@ -84,10 +86,16 @@ public abstract class JerseyHateoasApplication extends PackagesResourceConfig {
         HateoasResponseBuilder.configure(linkInjector, collectionWrapperStrategy, viewFactory);
         HateoasVerbosity.setDefaultVerbosity(verbosity);
 
-        JerseyHateoasContextFilter filter = new JerseyHateoasContextFilter();
-
-        super.getContainerRequestFilters().add(filter);
-        super.getContainerResponseFilters().add(filter);
+        register((ContainerRequestFilter) containerRequestContext -> {
+			RequestContext.clearRequestContext();
+			RequestContext ctx = new RequestContext(UriBuilder.fromUri(containerRequestContext.getUriInfo().getBaseUri()), containerRequestContext.getHeaderString(RequestContext.HATEOAS_OPTIONS_HEADER));
+			RequestContext.setRequestContext(ctx);
+		});
+        register((ContainerResponseFilter) (containerRequestContext, containerResponseContext) -> {
+			RequestContext.clearRequestContext();
+			RequestContext ctx = new RequestContext(UriBuilder.fromUri(containerRequestContext.getUriInfo().getBaseUri()), containerRequestContext.getHeaderString(RequestContext.HATEOAS_OPTIONS_HEADER));
+			RequestContext.setRequestContext(ctx);
+		});
     }
 
 }

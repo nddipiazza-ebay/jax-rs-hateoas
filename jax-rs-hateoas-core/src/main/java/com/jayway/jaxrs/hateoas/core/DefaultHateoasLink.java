@@ -21,7 +21,7 @@ import com.jayway.jaxrs.hateoas.HateoasVerbosity;
 import com.jayway.jaxrs.hateoas.LinkableInfo;
 import com.jayway.jaxrs.hateoas.web.RequestContext;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
