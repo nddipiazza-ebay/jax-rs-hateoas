@@ -24,7 +24,7 @@ import com.jayway.jaxrs.hateoas.support.DefaultHateoasViewFactory;
 import com.jayway.jaxrs.hateoas.support.JavassistHateoasLinkInjector;
 import com.jayway.jaxrs.hateoas.support.StrategyBasedLinkInjector;
 
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.core.Application;
 import java.util.Set;
 
 /**

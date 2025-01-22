@@ -14,7 +14,7 @@
  */
 package com.jayway.jaxrs.hateoas.web;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 
 /**
  * @author Mattias Hellborg Arthursson

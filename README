@@ -1,5 +1,7 @@
 JAX-RS-HATEOAS is a small extension to JAX-RS to enable hypermedia in JAX-RS 1.x applications.
 
+In 1.0.0 release I have removed the spring servlet. And focused on the support of Jersey 3.x only.
+
 Adding hypermedia to your existing application is easily done in four steps:
 * Extend HateoasApplication (or JerseyHateoasApplication)
 * Add @Linkable annotations to all methods that should be linkable.
@@ -11,3 +13,5 @@ Adding hypermedia to your existing application is easily done in four steps:
 ** selfLink(String linkId, Object... params) - adds a link to the referenced linkId with a 'self' rel
    (rather than the default rel defined in the referenced @Linkable annotation
 ** ...etc
+
+

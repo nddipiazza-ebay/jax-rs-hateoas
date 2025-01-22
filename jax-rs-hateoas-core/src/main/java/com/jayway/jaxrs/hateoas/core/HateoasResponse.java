@@ -14,16 +14,36 @@
  */
 package com.jayway.jaxrs.hateoas.core;
 
-import com.jayway.jaxrs.hateoas.*;
+import com.jayway.jaxrs.hateoas.CollectionWrapperStrategy;
+import com.jayway.jaxrs.hateoas.HateoasContext;
+import com.jayway.jaxrs.hateoas.HateoasContextProvider;
+import com.jayway.jaxrs.hateoas.HateoasLink;
+import com.jayway.jaxrs.hateoas.HateoasLinkInjector;
+import com.jayway.jaxrs.hateoas.HateoasViewFactory;
+import com.jayway.jaxrs.hateoas.LinkProducer;
+import com.jayway.jaxrs.hateoas.LinkableInfo;
+import com.jayway.jaxrs.hateoas.ParamExpander;
 import com.jayway.jaxrs.hateoas.support.FieldPath;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.GenericEntity;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.Link;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Variant;
 
-import javax.ws.rs.core.*;
+import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Extension of the standard JAX-RS {@link Response}, providing access to a {@link HateoasResponseBuilder} rather
@@ -43,11 +63,11 @@ public abstract class HateoasResponse extends Response {
     /**
      * Return the response entity. The response will be serialized using a
      * MessageBodyWriter for either the class of the entity or, in the case of
-     * {@link javax.ws.rs.core.GenericEntity}, the value of
-     * {@link javax.ws.rs.core.GenericEntity#getRawType()}.
+     * {@link jakarta.ws.rs.core.GenericEntity}, the value of
+     * {@link jakarta.ws.rs.core.GenericEntity#getRawType()}.
      *
      * @return an object instance or null if there is no entity
-     * @see javax.ws.rs.ext.MessageBodyWriter
+     * @see jakarta.ws.rs.ext.MessageBodyWriter
      */
     public abstract Object getEntity();
 
@@ -61,9 +81,9 @@ public abstract class HateoasResponse extends Response {
     /**
      * Get metadata associated with the response as a map. The returned map may
      * be subsequently modified by the JAX-RS runtime. Values will be serialized
-     * using a {@link javax.ws.rs.ext.RuntimeDelegate.HeaderDelegate} if one is
+     * using a {@link jakarta.ws.rs.ext.RuntimeDelegate.HeaderDelegate} if one is
      * available via
-     * {@link javax.ws.rs.ext.RuntimeDelegate#createHeaderDelegate(java.lang.Class)}
+     * {@link jakarta.ws.rs.ext.RuntimeDelegate#createHeaderDelegate(java.lang.Class)}
      * for the class of the value or using the values {@code toString} method if
      * a header delegate is not available.
      *
@@ -143,7 +163,7 @@ public abstract class HateoasResponse extends Response {
     /**
      * Create a new ResponseBuilder that contains a representation. It is the
      * callers responsibility to wrap the actual entity with
-     * {@link javax.ws.rs.core.GenericEntity} if preservation of its generic
+     * {@link jakarta.ws.rs.core.GenericEntity} if preservation of its generic
      * type is required.
      *
      * @param entity the representation entity data
@@ -158,7 +178,7 @@ public abstract class HateoasResponse extends Response {
     /**
      * Create a new ResponseBuilder that contains a representation. It is the
      * callers responsibility to wrap the actual entity with
-     * {@link javax.ws.rs.core.GenericEntity} if preservation of its generic
+     * {@link jakarta.ws.rs.core.GenericEntity} if preservation of its generic
      * type is required.
      *
      * @param entity the representation entity data
@@ -175,7 +195,7 @@ public abstract class HateoasResponse extends Response {
     /**
      * Create a new ResponseBuilder that contains a representation. It is the
      * callers responsibility to wrap the actual entity with
-     * {@link javax.ws.rs.core.GenericEntity} if preservation of its generic
+     * {@link jakarta.ws.rs.core.GenericEntity} if preservation of its generic
      * type is required.
      *
      * @param entity the representation entity data
@@ -192,7 +212,7 @@ public abstract class HateoasResponse extends Response {
     /**
      * Create a new ResponseBuilder that contains a representation. It is the
      * callers responsibility to wrap the actual entity with
-     * {@link javax.ws.rs.core.GenericEntity} if preservation of its generic
+     * {@link jakarta.ws.rs.core.GenericEntity} if preservation of its generic
      * type is required.
      *
      * @param entity  the representation entity data
@@ -223,7 +243,7 @@ public abstract class HateoasResponse extends Response {
      * @param location the URI of the new resource. If a relative URI is supplied it
      *                 will be converted into an absolute URI by resolving it
      *                 relative to the request URI (see
-     *                 {@link javax.ws.rs.core.UriInfo#getRequestUri}).
+     *                 {@link jakarta.ws.rs.core.UriInfo#getRequestUri}).
      * @return a new ResponseBuilder
      * @throws java.lang.IllegalArgumentException
      *          if location is null
@@ -469,7 +489,7 @@ public abstract class HateoasResponse extends Response {
          * @param fieldPath      The FieldPath of the targeted object in the object graph represented by the entity root.
          * @param id             the @Linkable id of the target method.
          * @param rel            the relation of the linked resource in the current context.
-         * @param paramExpanders configuration to use when expanding {@link javax.ws.rs.PathParam}eters and  {@link javax.ws.rs.QueryParam}eters
+         * @param paramExpanders configuration to use when expanding {@link jakarta.ws.rs.PathParam}eters and  {@link jakarta.ws.rs.QueryParam}eters
          * @return this
          * @see ParamExpander
          */
@@ -491,8 +511,8 @@ public abstract class HateoasResponse extends Response {
          *
          * @param fieldPath      The FieldPath of the targeted object in the object graph represented by the entity root.
          * @param id             the @Linkable id of the target method.
-         * @param paramExpanders configuration to use when expanding {@link javax.ws.rs.PathParam}eters
-         *                       and  {@link javax.ws.rs.QueryParam}eters
+         * @param paramExpanders configuration to use when expanding {@link jakarta.ws.rs.PathParam}eters
+         *                       and  {@link jakarta.ws.rs.QueryParam}eters
          * @return this
          * @see ParamExpander
          */
@@ -507,8 +527,8 @@ public abstract class HateoasResponse extends Response {
          *
          * @param id             the @Linkable id of the target method.
          * @param rel            the relation of the linked resource in the current context.
-         * @param paramExpanders configuration to use when expanding {@link javax.ws.rs.PathParam}eters
-         *                       and  {@link javax.ws.rs.QueryParam}eters
+         * @param paramExpanders configuration to use when expanding {@link jakarta.ws.rs.PathParam}eters
+         *                       and  {@link jakarta.ws.rs.QueryParam}eters
          * @return this
          * @see ParamExpander
          */
@@ -518,12 +538,12 @@ public abstract class HateoasResponse extends Response {
          * Append a link to the entity root, corresponding to the supplied id, building the URI using the specified
          * expanders, defaulting the rel to 'self'.
          *
-         * Note that the order in witch the {@link javax.ws.rs.PathParam}eters are defined determines
+         * Note that the order in witch the {@link jakarta.ws.rs.PathParam}eters are defined determines
          * their position in the compiled path.
          *
          * @param id             the @Linkable id of the target method.
-         * @param paramExpanders configuration to use when expanding {@link javax.ws.rs.PathParam}eters
-         *                       and  {@link javax.ws.rs.QueryParam}eters
+         * @param paramExpanders configuration to use when expanding {@link jakarta.ws.rs.PathParam}eters
+         *                       and  {@link jakarta.ws.rs.QueryParam}eters
          * @return this
          * @see ParamExpander
          */
@@ -538,8 +558,8 @@ public abstract class HateoasResponse extends Response {
          *
          * @param id             the @Linkable id of the target method.
          * @param rel            the relation of the linked resource from an item in the list.
-         * @param paramExpanders configuration to use when expanding {@link javax.ws.rs.PathParam}eters
-         *                       and  {@link javax.ws.rs.QueryParam}eters
+         * @param paramExpanders configuration to use when expanding {@link jakarta.ws.rs.PathParam}eters
+         *                       and  {@link jakarta.ws.rs.QueryParam}eters
          * @return this.
          * @see ParamExpander
          */
@@ -553,8 +573,8 @@ public abstract class HateoasResponse extends Response {
          * their position in the compiled path.
          *
          * @param id             the @Linkable id of the target method.
-         * @param paramExpanders configuration to use when expanding {@link javax.ws.rs.PathParam}eters
-         *                       and  {@link javax.ws.rs.QueryParam}eters
+         * @param paramExpanders configuration to use when expanding {@link jakarta.ws.rs.PathParam}eters
+         *                       and  {@link jakarta.ws.rs.QueryParam}eters
          * @return this.
          * @see ParamExpander
          */
@@ -836,9 +856,9 @@ public abstract class HateoasResponse extends Response {
          * @param name  the name of the header
          * @param value the value of the header, the header will be serialized
          *              using a
-         *              {@link javax.ws.rs.ext.RuntimeDelegate.HeaderDelegate} if
+         *              {@link jakarta.ws.rs.ext.RuntimeDelegate.HeaderDelegate} if
          *              one is available via
-         *              {@link javax.ws.rs.ext.RuntimeDelegate#createHeaderDelegate(java.lang.Class)}
+         *              {@link jakarta.ws.rs.ext.RuntimeDelegate#createHeaderDelegate(java.lang.Class)}
          *              for the class of {@code value} or using its
          *              {@code toString} method if a header delegate is not
          *              available. If {@code value} is null then all current
@@ -878,5 +898,121 @@ public abstract class HateoasResponse extends Response {
             return collectionWrapperStrategy;
         }
     }
+
+    @Override
+    public StatusType getStatusInfo() {
+        return null;
+    }
+
+    @Override
+    public <T> T readEntity(Class<T> aClass) {
+        return null;
+    }
+
+    @Override
+    public <T> T readEntity(GenericType<T> genericType) {
+        return null;
+    }
+
+    @Override
+    public <T> T readEntity(Class<T> aClass, Annotation[] annotations) {
+        return null;
+    }
+
+    @Override
+    public <T> T readEntity(GenericType<T> genericType, Annotation[] annotations) {
+        return null;
+    }
+
+    @Override
+    public boolean hasEntity() {
+        return false;
+    }
+
+    @Override
+    public boolean bufferEntity() {
+        return false;
+    }
+
+    @Override
+    public void close() {
+
+    }
+
+    @Override
+    public MediaType getMediaType() {
+        return null;
+    }
+
+    @Override
+    public Locale getLanguage() {
+        return null;
+    }
+
+    @Override
+    public int getLength() {
+        return 0;
+    }
+
+    @Override
+    public Set<String> getAllowedMethods() {
+        return Set.of();
+    }
+
+    @Override
+    public Map<String, NewCookie> getCookies() {
+        return Map.of();
+    }
+
+    @Override
+    public EntityTag getEntityTag() {
+        return null;
+    }
+
+    @Override
+    public Date getDate() {
+        return null;
+    }
+
+    @Override
+    public Date getLastModified() {
+        return null;
+    }
+
+    @Override
+    public URI getLocation() {
+        return null;
+    }
+
+    @Override
+    public Set<Link> getLinks() {
+        return Set.of();
+    }
+
+    @Override
+    public boolean hasLink(String s) {
+        return false;
+    }
+
+    @Override
+    public Link getLink(String s) {
+        return null;
+    }
+
+    @Override
+    public Link.Builder getLinkBuilder(String s) {
+        return null;
+    }
+
+    @Override
+    public MultivaluedMap<String, String> getStringHeaders() {
+        return null;
+    }
+
+    @Override
+    public String getHeaderString(String s) {
+        return "";
+    }
+
 
 }
