@@ -14,22 +14,21 @@
  */
 package com.jayway.jaxrs.hateoas.core.jersey;
 
-import com.jayway.jaxrs.hateoas.*;
+import com.jayway.jaxrs.hateoas.CollectionWrapperStrategy;
+import com.jayway.jaxrs.hateoas.HateoasContextProvider;
+import com.jayway.jaxrs.hateoas.HateoasLinkInjector;
+import com.jayway.jaxrs.hateoas.HateoasVerbosity;
+import com.jayway.jaxrs.hateoas.HateoasViewFactory;
 import com.jayway.jaxrs.hateoas.core.HateoasConfigurationFactory;
 import com.jayway.jaxrs.hateoas.core.HateoasResponse.HateoasResponseBuilder;
 import com.jayway.jaxrs.hateoas.web.RequestContext;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.UriBuilder;
-import org.apache.http.protocol.ResponseContent;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
