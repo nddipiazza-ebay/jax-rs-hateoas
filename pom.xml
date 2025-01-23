@@ -4,23 +4,12 @@
     <description>JAX-RS extension to support hypermedia links (HATEOAS)</description>
     <inceptionYear>2011</inceptionYear>
 
-    <groupId>com.jayway.jax-rs-hateoas</groupId>
+    <groupId>com.ebay.tao.lib</groupId>
     <artifactId>jax-rs-hateoas-parent</artifactId>
-    <packaging>pom</packaging>
-
     <version>1.0.0-SNAPSHOT</version>
-    <name>jax-rs-hateoas build root</name>
+    <name>Jax-rs-hateoas build root</name>
 
-    <issueManagement>
-        <system>GitHub Issue Tracking</system>
-    </issueManagement>
-
-    <licenses>
-        <license>
-            <name>Apache 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
-        </license>
-    </licenses>
+    <packaging>pom</packaging>
 
     <properties>
         <scm.branch>master</scm.branch>
@@ -28,12 +17,6 @@
         <jersey.version>3.0.0</jersey.version>
         <jersey-apache-connector.version>2.25</jersey-apache-connector.version>
     </properties>
-
-    <scm>
-        <url>http://github.com/nddipiazza-ebay/jax-rs-hateoas/tree/${scm.branch}</url>
-        <connection>scm:git:git://github.com/nddipiazza-ebay/jax-rs-hateoas.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/nddipiazza-ebay/jax-rs-hateoas.git</developerConnection>
-    </scm>
 
     <modules>
         <module>jax-rs-hateoas-core-jersey3</module>
@@ -165,7 +148,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
