@@ -32,4 +32,4 @@ jobs:
       with:
         servers: '[{"id": "ossrh", "username": "${{ secrets.OSSRH_UN }}", "password": "${{ secrets.OSSRH_PW }}"}]'
     - name: Build with Maven
-      run: mvn -B deploy --file pom.xml
+      run: mvn -B deploy --file pom.xml -Dx=${{ secrets.abc }}
