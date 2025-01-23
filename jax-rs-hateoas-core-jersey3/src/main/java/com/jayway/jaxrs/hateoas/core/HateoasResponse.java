@@ -1,17 +1,3 @@
-/*
- * Copyright 2011 the original author or authors.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.jayway.jaxrs.hateoas.core;
 
 import com.jayway.jaxrs.hateoas.CollectionWrapperStrategy;
@@ -385,11 +371,9 @@ public abstract class HateoasResponse extends Response {
         /**
          * Append a link to the object at the specified FieldPath, corresponding to the supplied id,
          * building the URI using the specified parameters.
-         * <p/>
-         * If the object at the target FieldPath is a {@link java.util.Collection},
+             * If the object at the target FieldPath is a {@link java.util.Collection},
          * the link will be applied to <b>each</b> entry in the collection.
-         * <p/>
-         * If any object encountered in the middle of the FieldPath is a Collection,
+             * If any object encountered in the middle of the FieldPath is a Collection,
          * the rest of the path will be traversed for each element in that collection,
          * making sure that the links will be applied at each end node.
          *
@@ -407,11 +391,9 @@ public abstract class HateoasResponse extends Response {
         /**
          * Append a link to the object at the specified FieldPath, corresponding to the supplied id,
          * building the URI using the specified parameters, defaulting the rel to 'self'.
-         * <p/>
-         * If the object at the target FieldPath is a {@link java.util.Collection},
+             * If the object at the target FieldPath is a {@link java.util.Collection},
          * the link will be applied to <b>each</b> entry in the collection.
-         * <p/>
-         * If any object encountered in the middle of the FieldPath is a Collection,
+             * If any object encountered in the middle of the FieldPath is a Collection,
          * the rest of the path will be traversed for each element in that collection,
          * making sure that the links will be applied at each end node.
          *
@@ -475,11 +457,9 @@ public abstract class HateoasResponse extends Response {
         /**
          * Append a link to the object at the specified FieldPath, corresponding to the supplied id,
          * building the URI using the specified expanders.
-         * <p/>
-         * If the object at the target FieldPath is a {@link java.util.Collection},
+             * If the object at the target FieldPath is a {@link java.util.Collection},
          * the link will be applied to <b>each</b> entry in the collection.
-         * <p/>
-         * If any object encountered in the middle of the FieldPath is a Collection,
+             * If any object encountered in the middle of the FieldPath is a Collection,
          * the rest of the path will be traversed for each element in that collection,
          * making sure that the links will be applied at each end node.
          *
@@ -498,11 +478,9 @@ public abstract class HateoasResponse extends Response {
         /**
          * Append a link to the object at the specified FieldPath, corresponding to the supplied id,
          * building the URI using the specified expanders, defaulting the rel to 'self'.
-         * <p/>
-         * If the object at the target FieldPath is a {@link java.util.Collection},
+             * If the object at the target FieldPath is a {@link java.util.Collection},
          * the link will be applied to <b>each</b> entry in the collection.
-         * <p/>
-         * If any object encountered in the middle of the FieldPath is a Collection,
+             * If any object encountered in the middle of the FieldPath is a Collection,
          * the rest of the path will be traversed for each element in that collection,
          * making sure that the links will be applied at each end node.
          *
@@ -595,12 +573,10 @@ public abstract class HateoasResponse extends Response {
 
         /**
          * Append a LinkProducer to be applied for generating links for the object at the specified FieldPath.
-         * <p/>
-         * If the object at the target FieldPath is a {@link java.util.Collection},
+             * If the object at the target FieldPath is a {@link java.util.Collection},
          * the LinkProducer will be applied to <b>each</b> entry in the collection,
          * and the resulting links will be appended to the links collection of each individual entry.
-         * <p/>
-         * If any object encountered in the middle of the FieldPath is a Collection,
+             * If any object encountered in the middle of the FieldPath is a Collection,
          * the rest of the path will be traversed for each element in that collection,
          * making sure that the links will be applied at each end node.
          *
