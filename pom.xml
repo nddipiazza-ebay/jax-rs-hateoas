@@ -128,7 +128,16 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    <distributionManagement>
+        <repository>
+            <id>raptor.releases</id>
+            <url>https://ebaycentral.qa.ebay.com/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>raptor.snapshots</id>
+            <url>https://ebaycentral.qa.ebay.com/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
     <build>
         <plugins>
             <plugin>
@@ -181,15 +190,6 @@
                     <includes>
                         <include>**/*.java</include>
                     </includes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.7.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <publishingServerId>central</publishingServerId>
                 </configuration>
             </plugin>
         </plugins>
