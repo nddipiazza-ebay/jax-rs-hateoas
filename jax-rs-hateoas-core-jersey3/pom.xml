@@ -6,7 +6,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.jayway.jax-rs-hateoas</groupId>
+        <groupId>com.ebay.tao.lib</groupId>
         <artifactId>jax-rs-hateoas-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
