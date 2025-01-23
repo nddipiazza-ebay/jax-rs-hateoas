@@ -23,31 +23,6 @@
         </license>
     </licenses>
 
-    <developers>
-        <developer>
-            <name>Kalle Stenflo</name>
-            <id>kalle.stenflo</id>
-            <organization>Jayway</organization>
-            <organizationUrl>http://www.jayway.com</organizationUrl>
-            <email>kale.stenflo (at) gmail.com</email>
-            <timezone>+1</timezone>
-            <roles>
-                <role>Developer</role>
-            </roles>
-        </developer>
-        <developer>
-            <name>Mattias Arthursson</name>
-            <id>mattias.arthursson</id>
-            <organization>Jayway</organization>
-            <organizationUrl>http://www.jayway.com</organizationUrl>
-            <email>mattias.arthursson (at) gmail.com</email>
-            <timezone>+1</timezone>
-            <roles>
-                <role>Developer</role>
-            </roles>
-        </developer>
-    </developers>
-
     <properties>
         <scm.branch>master</scm.branch>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -62,7 +37,7 @@
     </scm>
 
     <modules>
-        <module>jax-rs-hateoas-core</module>
+        <module>jax-rs-hateoas-core-jersey3</module>
     </modules>
 
     <dependencyManagement>
@@ -180,7 +155,9 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.3.0</version>
                 <configuration combine.self="override">
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
